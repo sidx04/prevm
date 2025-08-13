@@ -1,6 +1,8 @@
 package main
 
-import "math/big"
+import (
+	"math/big"
+)
 
 // Account represents a single account in the Ethereum world state.
 type Account struct {

@@ -46,7 +46,7 @@ func (evm *EVM) ProcessTransaction(tx *Transaction, sender [20]byte) ([]byte, ui
 		}
 		gasRemaining := tx.GasLimit - intrinsicGas
 	*/
-	var gasRemaining uint64 = 100
+	var gasRemaining uint64 = 100000
 
 	// 3. Create the initial Execution Context (the first call frame)
 	var code []byte
@@ -81,12 +81,7 @@ func (evm *EVM) ProcessTransaction(tx *Transaction, sender [20]byte) ([]byte, ui
 
 // execute runs the bytecode for a given context and returns the output data.
 func (evm *EVM) Execute(ec *ExecutionContext, tx *TransactionContext) ([]byte, error) {
-	// log := log.NewWithOptions(os.Stderr, log.Options{
-	// 	ReportCaller:    true,
-	// 	ReportTimestamp: true,
-	// 	TimeFormat:      time.UnixDate,
-	// 	Level:           log.DebugLevel,
-	// })
+	// logger := config.Logger
 
 	for !ec.Stopped {
 		// Get the opcode object from the instruction set.

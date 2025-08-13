@@ -3,21 +3,11 @@ package main
 import (
 	"fmt"
 	"math/big"
-	"os"
-	"time"
-
-	"github.com/charmbracelet/log"
+	"prevm/config"
 )
 
 func main() {
-	logger := log.NewWithOptions(os.Stderr, log.Options{
-		ReportCaller:    true,
-		ReportTimestamp: true,
-		TimeFormat:      time.DateTime,
-		Level:           log.DebugLevel,
-		Prefix:          "EVM",
-	})
-	logger.Info("Hello, Ethereum!")
+	logger := config.Logger
 
 	logger.Info("Starting EVM simulation...")
 
@@ -45,8 +35,19 @@ func main() {
 	state.accounts[accountB_Addr] = accountB
 	logger.Debug("Created Account B", "address", fmt.Sprintf("0x%x", accountB_Addr))
 
-	// --- Contract Bytecode (calculates 10 + 5 = 15) ---
-	bytecode := []byte{byte(0x60), 0x0A, byte(0x60), 0x05, byte(0x01), byte(0x00)}
+	// --- Contract Bytecode (calculates 65538 - 10 = 65528) ---
+	bytecode := []byte{
+		byte(0x7F), // PUSH32
+		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		// The 3-byte value for 65538
+		byte(0x60), // PUSH1
+		0x00,       // The 1-byte value for 10
+		byte(ADD),  // ADD
+		byte(0x00), // STOP
+	}
 
 	contractAccount := NewAccount()
 	contractAccount.Code = bytecode
