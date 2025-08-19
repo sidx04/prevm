@@ -7,6 +7,9 @@ import (
 
 // ExecutionContext holds the state for the current execution scope.
 type ExecutionContext struct {
+	// Address is the The address of the contract whose code is currently running.
+	// This value changes with every CALL or DELEGATECALL.
+	Address [20]byte
 	// Bytecode is the contract bytecode to be executed in this context.
 	Bytecode []byte
 	// Stack is the stack for this context.

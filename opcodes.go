@@ -8,7 +8,7 @@ import (
 
 // Opcode represents a single executable EVM instruction.
 type Opcode interface {
-	Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error
+	Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error
 }
 
 var logger = config.Logger
@@ -19,7 +19,7 @@ var logger = config.Logger
 // Stop implements the STOP opcode (0x00).
 type Stop struct{}
 
-func (o *Stop) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Stop) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	ec.Stop()
 	return nil
 }
@@ -27,7 +27,7 @@ func (o *Stop) Execute(ec *ExecutionContext, block *BlockContext, tx *Transactio
 // Sub implements the ADD opcode (0x01).
 type Add struct{}
 
-func (o *Add) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Add) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 
 	logger.Debug(fmt.Sprintln(ec.Stack.Display()))
 
@@ -44,7 +44,7 @@ func (o *Add) Execute(ec *ExecutionContext, block *BlockContext, tx *Transaction
 // Sub implements the SUB opcode (0x02).
 type Sub struct{}
 
-func (o *Sub) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Sub) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	logger.Debug("Stack", "Data", ec.Stack.GetData())
 
 	x := ec.Stack.Pop()
@@ -60,7 +60,7 @@ func (o *Sub) Execute(ec *ExecutionContext, block *BlockContext, tx *Transaction
 // Mul implements the MUL opcode (0x03).
 type Mul struct{}
 
-func (o *Mul) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Mul) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	x := ec.Stack.Pop()
 	y := ec.Stack.Pop()
 	res := new(big.Int).Mul(x, y)
@@ -71,7 +71,7 @@ func (o *Mul) Execute(ec *ExecutionContext, block *BlockContext, tx *Transaction
 // Div implements the DIV opcode (0x04).
 type Div struct{}
 
-func (o *Div) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Div) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	x := ec.Stack.Pop()
 	y := ec.Stack.Pop()
 	res := new(big.Int).Div(x, y)
@@ -90,7 +90,7 @@ var (
 	maxU256 = new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil)
 )
 
-func (o *Sdiv) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Sdiv) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	// 1. Pop the numerator and denominator from the stack.
 	x := ec.Stack.Pop()
 	y := ec.Stack.Pop()
@@ -134,7 +134,7 @@ func (o *Sdiv) Execute(ec *ExecutionContext, block *BlockContext, tx *Transactio
 // Mod implements the MOD opcode (0x06).
 type Mod struct{}
 
-func (o *Mod) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Mod) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	x := ec.Stack.Pop()
 	y := ec.Stack.Pop()
 	res := new(big.Int).Mod(x, y)
@@ -145,7 +145,7 @@ func (o *Mod) Execute(ec *ExecutionContext, block *BlockContext, tx *Transaction
 // Smod implements the SMOD opcode (0x07).
 type Smod struct{}
 
-func (o *Smod) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Smod) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	x := ec.Stack.Pop()
 	y := ec.Stack.Pop()
 	res := new(big.Int).Mod(x, y)
@@ -156,7 +156,7 @@ func (o *Smod) Execute(ec *ExecutionContext, block *BlockContext, tx *Transactio
 // AddMod implements the ADDMOD opcode (0x08).
 type AddMod struct{}
 
-func (o *AddMod) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *AddMod) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	// The items are popped in reverse order: N, then y, then x.
 	N := ec.Stack.Pop()
 	y := ec.Stack.Pop()
@@ -179,7 +179,7 @@ func (o *AddMod) Execute(ec *ExecutionContext, block *BlockContext, tx *Transact
 // MulMod implements the MULMOD opcode (0x09).
 type MulMod struct{}
 
-func (o *MulMod) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *MulMod) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	// The items are popped in reverse order: N, then y, then x.
 	N := ec.Stack.Pop()
 	y := ec.Stack.Pop()
@@ -202,7 +202,7 @@ func (o *MulMod) Execute(ec *ExecutionContext, block *BlockContext, tx *Transact
 // Exp implements the EXP opcode (0x0A).
 type Exp struct{}
 
-func (o *Exp) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Exp) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	// The items are popped in reverse order: N, then y, then x.
 	y := ec.Stack.Pop()
 	x := ec.Stack.Pop()
@@ -220,7 +220,7 @@ func (o *Exp) Execute(ec *ExecutionContext, block *BlockContext, tx *Transaction
 // ==============
 type Keccak struct{}
 
-func (o *Keccak) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Keccak) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	// bytes := ec.Memory.Get(0, 4)
 	return nil
 }
@@ -228,9 +228,52 @@ func (o *Keccak) Execute(ec *ExecutionContext, block *BlockContext, tx *Transact
 // =========================
 // --- BLOCK OPERATIONS ---
 // =========================
+// Address (0x30)
+type Address struct{}
+
+func (o *Address) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	addr := new(big.Int).SetBytes(ec.Address[:])
+	ec.Stack.Push(addr)
+
+	logger.Debug(addr)
+
+	return nil
+}
+
+// Balance (0x31)
+type Balance struct{}
+
+func (o *Balance) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	var address [20]byte
+
+	addressInt := ec.Stack.Pop()
+	addressBytes := addressInt.Bytes()
+	copy(address[20-len(addressBytes):], addressBytes)
+
+	account := evm.State.GetAccount(address)
+	bal := account.Balance
+
+	logger.Debug("Looked up balance", "address", fmt.Sprintf("0x%x", address), "balance", bal)
+
+	ec.Stack.Push(bal)
+
+	return nil
+}
+
+// Origin (0x32)
+type Origin struct{}
+
+func (o *Origin) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	addr := new(big.Int).SetBytes(tx.Origin[:])
+	ec.Stack.Push(addr)
+
+	return nil
+}
+
+// GasLimit (0x45)
 type GasLimit struct{}
 
-func (o *GasLimit) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *GasLimit) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	ec.ReturnData = block.GasLimit.Bytes()
 	return nil
 }
@@ -240,14 +283,14 @@ func (o *GasLimit) Execute(ec *ExecutionContext, block *BlockContext, tx *Transa
 // =================================================
 type Pop struct{}
 
-func (o *Pop) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Pop) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	ec.Stack.Pop()
 	return nil
 }
 
 type Mload struct{}
 
-func (o *Mload) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Mload) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	offset := ec.Stack.Pop().Uint64()
 
 	data := ec.Memory.Get(offset, 32)
@@ -260,7 +303,7 @@ func (o *Mload) Execute(ec *ExecutionContext, block *BlockContext, tx *Transacti
 
 type Mstore struct{}
 
-func (o *Mstore) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Mstore) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	offset := ec.Stack.Pop().Uint64()
 	value := ec.Stack.Pop()
 
@@ -273,7 +316,7 @@ func (o *Mstore) Execute(ec *ExecutionContext, block *BlockContext, tx *Transact
 
 type Pc struct{}
 
-func (o *Pc) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Pc) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	ec.Stack.Push(new(big.Int).SetUint64(ec.PC))
 	return nil
 }
@@ -284,7 +327,7 @@ func (o *Pc) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionC
 // Push handles all PUSH opcodes from PUSH1 to PUSH32
 type Push struct{}
 
-func (o *Push) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Push) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	// The PC was already advanced by GetOp(). We look back one byte
 	// to see which PUSH opcode it was.
 	opValue := ec.Bytecode[ec.PC-1]
@@ -297,7 +340,7 @@ func (o *Push) Execute(ec *ExecutionContext, block *BlockContext, tx *Transactio
 
 type Dup struct{}
 
-func (o *Dup) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+func (o *Dup) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	// The PC was already advanced by GetOp(). We look back one byte
 	// to see which DUP opcode it was.
 	opValue := ec.Bytecode[ec.PC-1]

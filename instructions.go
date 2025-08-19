@@ -10,7 +10,14 @@ func init() {
 	InstructionSet[0x01] = &Add{}
 	InstructionSet[0x02] = &Sub{}
 	InstructionSet[0x03] = &Mul{}
+	InstructionSet[0x08] = &AddMod{}
+	InstructionSet[0x09] = &MulMod{}
 	InstructionSet[0x0A] = &Exp{}
+	InstructionSet[0x20] = &Keccak{}
+	InstructionSet[0x30] = &Address{}
+	InstructionSet[0x31] = &Balance{}
+	InstructionSet[0x32] = &Origin{}
+
 	InstructionSet[0x51] = &Mload{}
 	InstructionSet[0x52] = &Mstore{}
 
@@ -34,6 +41,8 @@ func init() {
 	GasCosts[SUB] = 3
 	GasCosts[MUL] = 5
 	GasCosts[EXP] = 10
+	GasCosts[ADDRESS] = 2
+	GasCosts[BALANCE] = 4
 	GasCosts[MLOAD] = 3
 	GasCosts[MSTORE] = 8
 

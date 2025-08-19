@@ -101,7 +101,7 @@ func (evm *EVM) Execute(ec *ExecutionContext, tx *TransactionContext) ([]byte, e
 		ec.Gas -= gasCost
 
 		// --- Execute the Opcode ---
-		if err := opcodeObj.Execute(ec, evm.BlockCtx, tx); err != nil {
+		if err := opcodeObj.Execute(evm, ec, evm.BlockCtx, tx); err != nil {
 			return nil, err
 		}
 	}
