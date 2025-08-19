@@ -11,7 +11,7 @@ var Logger *log.Logger
 
 func init() {
 	Logger = log.NewWithOptions(os.Stderr, log.Options{
-		ReportCaller:    false,
+		ReportCaller:    true,
 		ReportTimestamp: true,
 		TimeFormat:      time.DateTime,
 		Level:           log.DebugLevel,

@@ -10,6 +10,9 @@ func init() {
 	InstructionSet[0x01] = &Add{}
 	InstructionSet[0x02] = &Sub{}
 	InstructionSet[0x03] = &Mul{}
+	InstructionSet[0x0A] = &Exp{}
+	InstructionSet[0x51] = &Mload{}
+	InstructionSet[0x52] = &Mstore{}
 
 	// --- PUSH Operations (Unified) ---
 	// Register the single Push struct for all 32 PUSH opcodes.
@@ -17,13 +20,22 @@ func init() {
 		InstructionSet[i] = &Push{}
 	}
 
+	// --- 0x80: Duplication Operations ---
+	// Register the single Dup struct for all 16 DUP opcodes.
+	for i := 0x80; i <= 0x8F; i++ {
+		InstructionSet[i] = &Dup{}
+	}
+
 	// ...Rest of opcodes
 
 	// Gas Costs
-	GasCosts[0x00] = 0
-	GasCosts[0x01] = 3
-	GasCosts[0x02] = 3
-	GasCosts[0x03] = 10
+	GasCosts[STOP] = 0
+	GasCosts[ADD] = 3
+	GasCosts[SUB] = 3
+	GasCosts[MUL] = 5
+	GasCosts[EXP] = 10
+	GasCosts[MLOAD] = 3
+	GasCosts[MSTORE] = 8
 
 	for i := 0x60; i <= 0x7F; i++ {
 		GasCosts[i] = uint64(i - 0x60 + 3)

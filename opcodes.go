@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/big"
 	"prevm/config"
 )
@@ -12,9 +13,9 @@ type Opcode interface {
 
 var logger = config.Logger
 
-// ===========================
-// --- ARITHMETIC OPCODES ---
-// ===========================
+// ====================================
+// --- STOP AND ARITHMETIC OPCODES ---
+// ====================================
 // Stop implements the STOP opcode (0x00).
 type Stop struct{}
 
@@ -27,7 +28,8 @@ func (o *Stop) Execute(ec *ExecutionContext, block *BlockContext, tx *Transactio
 type Add struct{}
 
 func (o *Add) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
-	logger.Debug("Stack", "Data", ec.Stack.GetData())
+
+	logger.Debug(fmt.Sprintln(ec.Stack.Display()))
 
 	x := ec.Stack.Pop()
 	y := ec.Stack.Pop()
@@ -66,6 +68,219 @@ func (o *Mul) Execute(ec *ExecutionContext, block *BlockContext, tx *Transaction
 	return nil
 }
 
+// Div implements the DIV opcode (0x04).
+type Div struct{}
+
+func (o *Div) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	x := ec.Stack.Pop()
+	y := ec.Stack.Pop()
+	res := new(big.Int).Div(x, y)
+	ec.Stack.Push(res)
+	return nil
+}
+
+// Sdiv implements the SDIV opcode (0x05).
+type Sdiv struct{}
+
+// S256 constants for signed conversion.
+var (
+	// 2^255, the boundary for a signed 256-bit integer
+	s256Limit = new(big.Int).Exp(big.NewInt(2), big.NewInt(255), nil)
+	// 2^256, used for two's complement conversion
+	maxU256 = new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil)
+)
+
+func (o *Sdiv) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	// 1. Pop the numerator and denominator from the stack.
+	x := ec.Stack.Pop()
+	y := ec.Stack.Pop()
+
+	// 2. Handle division by zero, which results in 0.
+	if y.Sign() == 0 {
+		ec.Stack.Push(new(big.Int)) // Push 0
+		return nil
+	}
+
+	// 3. Convert the numbers to their signed 256-bit representation.
+	// If a number is >= 2^255, it's negative. Its value is num - 2^256.
+	if x.Cmp(s256Limit) >= 0 {
+		x.Sub(x, maxU256)
+	}
+	if y.Cmp(s256Limit) >= 0 {
+		y.Sub(y, maxU256)
+	}
+
+	// 4. Handle the specific edge case: the most negative number (-2^255)
+	// divided by -1 results in -2^255, not 2^255 (which would overflow).
+	if x.Cmp(s256Limit) == 0 && y.Cmp(big.NewInt(-1)) == 0 {
+		ec.Stack.Push(s256Limit)
+		return nil
+	}
+
+	// 5. Perform the signed division.
+	res := new(big.Int).Div(x, y)
+
+	// 6. Convert the result back to its 256-bit two's complement
+	// representation before pushing it to the stack.
+	// This is done by taking the result modulo 2^256.
+	if res.Sign() < 0 {
+		res.Add(res, maxU256)
+	}
+
+	ec.Stack.Push(res)
+	return nil
+}
+
+// Mod implements the MOD opcode (0x06).
+type Mod struct{}
+
+func (o *Mod) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	x := ec.Stack.Pop()
+	y := ec.Stack.Pop()
+	res := new(big.Int).Mod(x, y)
+	ec.Stack.Push(res)
+	return nil
+}
+
+// Smod implements the SMOD opcode (0x07).
+type Smod struct{}
+
+func (o *Smod) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	x := ec.Stack.Pop()
+	y := ec.Stack.Pop()
+	res := new(big.Int).Mod(x, y)
+	ec.Stack.Push(res)
+	return nil
+}
+
+// AddMod implements the ADDMOD opcode (0x08).
+type AddMod struct{}
+
+func (o *AddMod) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	// The items are popped in reverse order: N, then y, then x.
+	N := ec.Stack.Pop()
+	y := ec.Stack.Pop()
+	x := ec.Stack.Pop()
+
+	// The result of (x + y) mod 0 is defined as 0 in the EVM.
+	if N.Sign() == 0 {
+		ec.Stack.Push(new(big.Int)) // Push 0
+		return nil
+	}
+
+	// 3. Perform the modular addition using the methods from math/big.
+	sum := new(big.Int).Add(x, y)
+	res := new(big.Int).Mod(sum, N)
+
+	ec.Stack.Push(res)
+	return nil
+}
+
+// MulMod implements the MULMOD opcode (0x09).
+type MulMod struct{}
+
+func (o *MulMod) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	// The items are popped in reverse order: N, then y, then x.
+	N := ec.Stack.Pop()
+	y := ec.Stack.Pop()
+	x := ec.Stack.Pop()
+
+	// The result of (x * y) mod 0 is defined as 0 in the EVM.
+	if N.Sign() == 0 {
+		ec.Stack.Push(new(big.Int)) // Push 0
+		return nil
+	}
+
+	// Perform the modular multiplication.
+	sum := new(big.Int).Mul(x, y)
+	res := new(big.Int).Mod(sum, N)
+
+	ec.Stack.Push(res)
+	return nil
+}
+
+// Exp implements the EXP opcode (0x0A).
+type Exp struct{}
+
+func (o *Exp) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	// The items are popped in reverse order: N, then y, then x.
+	y := ec.Stack.Pop()
+	x := ec.Stack.Pop()
+
+	res := new(big.Int).Exp(x, y, nil)
+
+	ec.Stack.Push(res)
+	logger.Debug(fmt.Sprintln(ec.Stack.Display()))
+
+	return nil
+}
+
+// ==============
+// --- SHA-3 ---
+// ==============
+type Keccak struct{}
+
+func (o *Keccak) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	// bytes := ec.Memory.Get(0, 4)
+	return nil
+}
+
+// =========================
+// --- BLOCK OPERATIONS ---
+// =========================
+type GasLimit struct{}
+
+func (o *GasLimit) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	ec.ReturnData = block.GasLimit.Bytes()
+	return nil
+}
+
+// =================================================
+// --- STACK MEMORY STORAGE AND FLOW OPERATIONS ---
+// =================================================
+type Pop struct{}
+
+func (o *Pop) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	ec.Stack.Pop()
+	return nil
+}
+
+type Mload struct{}
+
+func (o *Mload) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	offset := ec.Stack.Pop().Uint64()
+
+	data := ec.Memory.Get(offset, 32)
+	value := new(big.Int).SetBytes(data)
+
+	ec.Stack.Push(value)
+
+	return nil
+}
+
+type Mstore struct{}
+
+func (o *Mstore) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	offset := ec.Stack.Pop().Uint64()
+	value := ec.Stack.Pop()
+
+	ec.Memory.Set32(offset, value)
+
+	logger.Debug("Memory", ec.Memory.Display())
+
+	return nil
+}
+
+type Pc struct{}
+
+func (o *Pc) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	ec.Stack.Push(new(big.Int).SetUint64(ec.PC))
+	return nil
+}
+
+// =====================
+// --- PUSH OPCODES ---
+// =====================
 // Push handles all PUSH opcodes from PUSH1 to PUSH32
 type Push struct{}
 
@@ -77,6 +292,21 @@ func (o *Push) Execute(ec *ExecutionContext, block *BlockContext, tx *Transactio
 
 	value := ec.ReadCode(numToRead)
 	ec.Stack.Push(value)
+	return nil
+}
+
+type Dup struct{}
+
+func (o *Dup) Execute(ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	// The PC was already advanced by GetOp(). We look back one byte
+	// to see which DUP opcode it was.
+	opValue := ec.Bytecode[ec.PC-1]
+
+	depth := int(opValue - DUP1 + 1)
+
+	// Call the stack's Dup method.
+	ec.Stack.Dup(depth)
+
 	return nil
 }
 

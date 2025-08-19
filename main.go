@@ -35,18 +35,43 @@ func main() {
 	state.accounts[accountB_Addr] = accountB
 	logger.Debug("Created Account B", "address", fmt.Sprintf("0x%x", accountB_Addr))
 
-	// --- Contract Bytecode (calculates 65538 - 10 = 65528) ---
+	// --- Contract Bytecode ---
+	// bytecode := []byte{
+	// 	PUSH32,
+	// 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+	// 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+	// 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+	// 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+	// 	PUSH1,
+	// 	0x02,
+	// 	ADD,
+	// 	STOP,
+	// }
+
+	// bytecode = []byte{
+	// 	PUSH1, 1,
+	// 	PUSH1, 0,
+	// 	PUSH1, 0,
+	// 	PUSH1, 0,
+	// 	DUP4,
+	//  STOP,
+	// }
+
+	// bytecode := []byte{
+	// 	PUSH5,
+	// 	0x02, 0x03, 0x01, 0xFF, 0x01,
+	// 	PUSH1,
+	// 	0x05,
+	// 	EXP,
+	// 	STOP,
+	// }
+
 	bytecode := []byte{
-		byte(0x7F), // PUSH32
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-		// The 3-byte value for 65538
-		byte(0x60), // PUSH1
-		0x00,       // The 1-byte value for 10
-		byte(ADD),  // ADD
-		byte(0x00), // STOP
+		PUSH1,
+		0xFF,
+		PUSH1,
+		0x00,
+		MSTORE,
 	}
 
 	contractAccount := NewAccount()
@@ -83,6 +108,16 @@ func main() {
 	// ===================================================================
 	// --- TRANSACTION 2: Account B calls the same contract ---
 	// ===================================================================
+	bytecode = []byte{
+		PUSH1,
+		0xFF,
+		PUSH1,
+		0x01,
+		MSTORE,
+		STOP,
+	}
+	contractAccount.Code = bytecode
+
 	logger.Info("--- Processing Tx 2: Account B calls contract ---")
 	tx2 := &Transaction{
 		Nonce:    0, // Account B's first transaction

@@ -1,6 +1,11 @@
 package machine
 
-import "math/big"
+import (
+	"errors"
+	"fmt"
+	"math/big"
+	"strings"
+)
 
 // Memory is a simple byte array for EVM memory, which is volatile.
 type Memory struct {
@@ -12,6 +17,10 @@ func NewMemory() *Memory {
 	return &Memory{
 		data: make([]byte, 0, 1024),
 	}
+}
+
+func (m *Memory) GetData() []byte {
+	return m.data
 }
 
 // resize expands the memory to a new size. The EVM expands memory in
@@ -69,4 +78,35 @@ func (m *Memory) Get(offset, size uint64) []byte {
 		m.resize(requiredSize)
 	}
 	return m.data[offset : offset+size]
+}
+
+func (m *Memory) Display() error {
+	data := m.GetData()
+	memSize := len(data)
+
+	fmt.Println("--- Memory ---")
+	if memSize == 0 {
+		fmt.Println("[ empty ]")
+		fmt.Println("--------------")
+		return errors.New("")
+	}
+
+	// Iterate through memory in 32-byte chunks.
+	for i := 0; i < memSize; i += 32 {
+		// Determine the end of the current line's slice.
+		end := min(i+32, memSize)
+		chunk := data[i:end]
+
+		// Format each byte in the chunk as a two-character hex string.
+		var hexBytes []string
+		for _, b := range chunk {
+			hexBytes = append(hexBytes, fmt.Sprintf("%02x", b))
+		}
+
+		// Print the memory address and the hex representation of the data.
+		fmt.Printf("0x%04x:  %s\n", i, strings.Join(hexBytes, " "))
+	}
+	fmt.Println("--------------")
+
+	return nil
 }
