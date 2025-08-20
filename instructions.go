@@ -17,6 +17,14 @@ func init() {
 	InstructionSet[0x30] = &Address{}
 	InstructionSet[0x31] = &Balance{}
 	InstructionSet[0x32] = &Origin{}
+	InstructionSet[0x33] = &Caller{}
+	InstructionSet[0x34] = &CallValue{}
+	InstructionSet[0x35] = &CallDataLoad{}
+	InstructionSet[0x36] = &CallDataSize{}
+	InstructionSet[0x37] = &CallDataCopy{}
+	InstructionSet[0x38] = &CodeSize{}
+	InstructionSet[0x39] = &CodeCopy{}
+	InstructionSet[0x50] = &Pop{}
 
 	InstructionSet[0x51] = &Mload{}
 	InstructionSet[0x52] = &Mstore{}
@@ -43,6 +51,15 @@ func init() {
 	GasCosts[EXP] = 10
 	GasCosts[ADDRESS] = 2
 	GasCosts[BALANCE] = 4
+	GasCosts[ORIGIN] = 2
+	GasCosts[CALLER] = 2
+	GasCosts[CALLVALUE] = 2
+	GasCosts[CALLDATALOAD] = 2
+	GasCosts[CALLDATACOPY] = 3
+	GasCosts[CODESIZE] = 3
+	GasCosts[CODECOPY] = 3
+	GasCosts[POP] = 2
+
 	GasCosts[MLOAD] = 3
 	GasCosts[MSTORE] = 8
 

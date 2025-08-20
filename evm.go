@@ -58,9 +58,11 @@ func (evm *EVM) ProcessTransaction(tx *Transaction, sender [20]byte) ([]byte, ui
 	}
 
 	initialContext := NewExecutionContext(
+		sender,
 		contractAddr,
 		code,
 		tx.Data,
+		tx.Value,
 		gasRemaining,
 	)
 

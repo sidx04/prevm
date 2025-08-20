@@ -225,9 +225,9 @@ func (o *Keccak) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx
 	return nil
 }
 
-// =========================
-// --- BLOCK OPERATIONS ---
-// =========================
+// =================================
+// --- ENVIRONMENTAL OPERATIONS ---
+// =================================
 // Address (0x30)
 type Address struct{}
 
@@ -235,7 +235,7 @@ func (o *Address) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, t
 	addr := new(big.Int).SetBytes(ec.Address[:])
 	ec.Stack.Push(addr)
 
-	logger.Debug("Executing address", "address", fmt.Sprintf("0x%x", addr))
+	logger.Debug("ADDRESS", "address", fmt.Sprintf("0x%x", addr))
 
 	return nil
 }
@@ -253,7 +253,7 @@ func (o *Balance) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, t
 	account := evm.State.GetAccount(address)
 	bal := account.Balance
 
-	logger.Debug("Looked up balance", "address", fmt.Sprintf("0x%x", address), "balance", bal)
+	logger.Debug("BALANCE", "address", fmt.Sprintf("0x%x", address), "balance", fmt.Sprintf("%d WEI", bal))
 
 	ec.Stack.Push(bal)
 
@@ -266,6 +266,114 @@ type Origin struct{}
 func (o *Origin) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	addr := new(big.Int).SetBytes(tx.Origin[:])
 	ec.Stack.Push(addr)
+
+	return nil
+}
+
+// Caller (0x33)
+type Caller struct{}
+
+func (o *Caller) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	callAddr := ec.Caller
+
+	logger.Debug("CALLER", "address", fmt.Sprintf("0x%x", callAddr))
+
+	addrInt := new(big.Int).SetBytes(callAddr[:])
+
+	ec.Stack.Push(addrInt)
+
+	return nil
+}
+
+// CallValue(0x34)
+type CallValue struct{}
+
+func (o *CallValue) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	value := tx.Value
+
+	logger.Debug("CALLVALUE", "value", fmt.Sprintf("%d WEI", value))
+
+	ec.Stack.Push(value)
+
+	return nil
+}
+
+// CallDataLoad (0x35)
+type CallDataLoad struct{}
+
+func (o *CallDataLoad) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	offset := ec.Stack.Pop().Uint64()
+
+	data := new(big.Int).SetBytes(tx.Data[offset:])
+
+	logger.Debug("CALLDATALOAD", "data", fmt.Sprintf("%X", data))
+
+	ec.Stack.Push(data)
+
+	return nil
+}
+
+// CallDataSize (0x36)
+type CallDataSize struct{}
+
+func (o *CallDataSize) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	offset := ec.Stack.Pop().Uint64()
+
+	data := tx.Data[offset:]
+	size := len(data)
+
+	logger.Debug("CALLDATASIZE", "data", fmt.Sprintf("%X", data), "size", size)
+
+	ec.Stack.Push(new(big.Int).SetInt64(int64(size)))
+
+	return nil
+}
+
+// CallDataCopy (0x37)
+type CallDataCopy struct{}
+
+func (o *CallDataCopy) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	destOffset := ec.Stack.Pop().Uint64()
+	offset := ec.Stack.Pop().Uint64()
+	size := ec.Stack.Pop().Uint64()
+
+	dataToCopy := make([]byte, size)
+
+	calldataEnd := uint64(len(tx.Data))
+
+	if offset < calldataEnd {
+		copyEnd := min(offset+size,
+			calldataEnd)
+		copy(dataToCopy, tx.Data[offset:copyEnd])
+	}
+	// logger.Debug("CALLDATACOPY", "data", fmt.Sprintf("%x", dataToCopy))
+
+	ec.Memory.Set(destOffset, dataToCopy)
+
+	logger.Debug("CALLDATACOPY", "memory", ec.Memory.Display())
+
+	return nil
+}
+
+// CodeSize (0x38)
+type CodeSize struct{}
+
+func (o *CodeSize) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	len := new(big.Int).SetUint64(uint64(len(ec.Bytecode)))
+	logger.Debug("CODESIZE", "size", fmt.Sprint(len))
+
+	ec.Stack.Push(len)
+
+	return nil
+}
+
+// CodeCopy (0x39)
+type CodeCopy struct{}
+
+func (o *CodeCopy) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	code := ec.Bytecode
+
+	ec.Memory.Set(0, code)
 
 	return nil
 }
@@ -358,97 +466,6 @@ func (o *Dup) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *T
 // ==========================
 // Call implements the CALL opcode (0xf1).
 type Call struct{}
-
-// func (o *Call) Execute(ec *ExecutionContext, evm *EVM, block *BlockContext, tx *TransactionContext) error {
-// 	// --- 1. Pop Arguments from Stack ---
-// 	// The stack is LIFO, so we pop in reverse order of how they're listed.
-// 	retSize := ec.Stack.Pop().Uint64()
-// 	retOffset := ec.Stack.Pop().Uint64()
-// 	argsSize := ec.Stack.Pop().Uint64()
-// 	argsOffset := ec.Stack.Pop().Uint64()
-// 	value := ec.Stack.Pop()
-// 	addressInt := ec.Stack.Pop()
-// 	gasLimit := ec.Stack.Pop().Uint64()
-
-// 	// Convert the address from big.Int to a [20]byte array.
-// 	var calleeAddress [20]byte
-// 	addressBytes := addressInt.Bytes()
-// 	copy(calleeAddress[20-len(addressBytes):], addressBytes)
-
-// 	// --- 2. Pre-flight Checks and Gas Calculation ---
-// 	// Check for static call violation: cannot send value in a static context.
-// 	if ec.IsStatic && value.Sign() > 0 {
-// 		ec.Stack.Push(big.NewInt(0)) // Push 0 for failure
-// 		return nil
-// 	}
-
-// 	// Calculate the gas available for the sub-call, applying the 1/64th rule.
-// 	gasToSend := gasLimit
-// 	remainingGas := ec.Gas
-// 	if remainingGas < gasLimit {
-// 		gasToSend = remainingGas
-// 	}
-// 	// Tangerine Whistle EIP-150: Cap the gas sent at all but one 64th of the remaining gas.
-// 	gasCap := remainingGas - (remainingGas / 64)
-// 	if gasToSend > gasCap {
-// 		gasToSend = gasCap
-// 	}
-// 	ec.Gas -= gasToSend // Deduct gas from the current context immediately.
-
-// 	// --- 3. Prepare Calldata and Value Transfer ---
-// 	// Get the calldata for the sub-context from the caller's memory.
-// 	calldata := ec.Memory.Get(argsOffset, argsSize)
-
-// 	// Get caller and callee accounts from the state.
-// 	callerAccount := evm.State.GetAccount(ec.Address)
-// 	calleeAccount := evm.State.GetAccount(calleeAddress)
-
-// 	// Check if the caller has enough balance to send the value.
-// 	if callerAccount.Balance.Cmp(value) < 0 {
-// 		ec.Gas += gasToSend          // Refund the gas for the call
-// 		ec.Stack.Push(big.NewInt(0)) // Push 0 for failure
-// 		return nil
-// 	}
-
-// 	// Perform the value transfer.
-// 	if value.Sign() > 0 {
-// 		callerAccount.Balance.Sub(callerAccount.Balance, value)
-// 		calleeAccount.Balance.Add(calleeAccount.Balance, value)
-// 	}
-
-// 	// --- 4. Create and Execute the Sub-context ---
-// 	subContext := NewExecutionContext(
-// 		calleeAddress,
-// 		calleeAccount.Code,
-// 		calldata,
-// 		gasToSend,
-// 	)
-// 	// This is the recursive call to the EVM's execution loop.
-// 	returnData, err := evm.execute(subContext, tx)
-
-// 	// --- 5. Handle the Result of the Sub-call ---
-// 	// Refund any unused gas from the sub-call to the current context.
-// 	ec.Gas += subContext.Gas
-
-// 	// If the sub-call had an error (e.g., out of gas), the call fails.
-// 	if err != nil {
-// 		ec.Stack.Push(big.NewInt(0)) // Push 0 for failure
-// 	} else {
-// 		ec.Stack.Push(big.NewInt(1)) // Push 1 for success
-
-// 		// Copy the return data from the sub-context into the caller's memory.
-// 		if len(returnData) > 0 && retSize > 0 {
-// 			// Copy at most retSize bytes.
-// 			copySize := retSize
-// 			if uint64(len(returnData)) < copySize {
-// 				copySize = uint64(len(returnData))
-// 			}
-// 			ec.Memory.Set(retOffset, returnData[:copySize])
-// 		}
-// 	}
-
-// 	return nil
-// }
 
 // EVM Opcodes as constants
 const (

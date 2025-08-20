@@ -68,9 +68,23 @@ func main() {
 	// 	STOP,
 	// }
 
+	// bytecode := []byte{
+	// 	ADDRESS,
+	// 	BALANCE,
+	// 	CALLVALUE,
+	// 	PUSH1, 31,
+	// 	CALLDATALOAD,
+	// }
+
 	bytecode := []byte{
-		ADDRESS,
-		BALANCE,
+		PUSH1, 32,
+		PUSH1, 0,
+		PUSH1, 0,
+		CALLDATACOPY,
+		PUSH1, 8,
+		PUSH1, 31,
+		PUSH1, 0,
+		CALLDATACOPY,
 	}
 
 	contractAccount := NewAccount()
@@ -93,6 +107,8 @@ func main() {
 		Nonce:    0, // Account A's first transaction
 		GasLimit: 100000,
 		To:       &contractAddr,
+		Value:    big.NewInt(4400),
+		Data:     []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 	}
 
 	_, gasUsed1, err1 := evm.ProcessTransaction(tx1, accountA_Addr)
@@ -110,12 +126,9 @@ func main() {
 	// --- TRANSACTION 2: Account B calls the same contract ---
 	// ===================================================================
 	bytecode = []byte{
-		PUSH1,
-		0xFF,
-		PUSH1,
-		0x01,
-		MSTORE,
-		STOP,
+		PUSH10, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00,
+		POP,
+		CODESIZE,
 	}
 	contractAccount.Code = bytecode
 
@@ -124,6 +137,8 @@ func main() {
 		Nonce:    0, // Account B's first transaction
 		GasLimit: 100000,
 		To:       &contractAddr,
+		Value:    big.NewInt(3250),
+		Data:     []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 	}
 
 	_, gasUsed2, err2 := evm.ProcessTransaction(tx2, accountB_Addr)

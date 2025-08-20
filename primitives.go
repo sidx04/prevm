@@ -7,13 +7,13 @@ import (
 
 // ExecutionContext holds the state for the current execution scope.
 type ExecutionContext struct {
-	// True if this is a STATICCALL context
-	IsStatic bool
 	// Address is the The address of the contract whose code is currently running.
 	// This value changes with every CALL or DELEGATECALL.
 	Address [20]byte
 	// Bytecode is the contract bytecode to be executed in this context.
 	Bytecode []byte
+	// Address of the account that called this context
+	Caller [20]byte
 	// Stack is the stack for this context.
 	Stack *machine.Stack
 	// Memory is the memory for this context.
@@ -22,12 +22,18 @@ type ExecutionContext struct {
 	PC uint64
 	// Gas available for this context/frame
 	Gas uint64
+
+	// Value (in Wei) passed with this call
+	CallValue *big.Int
 	// Input data for this context/frame
 	CallData []byte
+
 	// Stopped indicates whether execution has been halted.
 	Stopped bool
 	// ReturnData is the data returned from this execution context.
 	ReturnData []byte
+	// True if this is a STATICCALL context
+	IsStatic bool
 }
 
 // BlockContext holds information about the current block.
@@ -86,17 +92,19 @@ type TransactionContext struct {
 }
 
 // NewExecutionContext creates a new execution context.
-func NewExecutionContext(address [20]byte, bytecode []byte, calldata []byte, gas uint64) *ExecutionContext {
+func NewExecutionContext(caller, address [20]byte, bytecode []byte, calldata []byte, value *big.Int, gas uint64) *ExecutionContext {
 	return &ExecutionContext{
-		Address:  address,
-		Bytecode: bytecode,
-		Stack:    machine.NewStack(1024),
-		Memory:   machine.NewMemory(),
-		PC:       0,
-		Gas:      gas,
-		CallData: calldata,
-		Stopped:  false,
-		IsStatic: false,
+		Address:   address,
+		Bytecode:  bytecode,
+		Stack:     machine.NewStack(1024),
+		Memory:    machine.NewMemory(),
+		PC:        0,
+		Caller:    caller,
+		CallValue: value,
+		Gas:       gas,
+		CallData:  calldata,
+		Stopped:   false,
+		IsStatic:  false,
 	}
 }
 
