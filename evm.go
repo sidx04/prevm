@@ -46,15 +46,19 @@ func (evm *EVM) ProcessTransaction(tx *Transaction, sender [20]byte) ([]byte, ui
 		}
 		gasRemaining := tx.GasLimit - intrinsicGas
 	*/
-	var gasRemaining uint64 = 100000
+	var gasRemaining uint64 = tx.GasLimit
 
 	// 3. Create the initial Execution Context (the first call frame)
 	var code []byte
+	var contractAddr [20]byte
+
 	if tx.To != nil {
+		contractAddr = *tx.To
 		code = evm.State.GetAccount(*tx.To).Code
 	}
 
 	initialContext := NewExecutionContext(
+		contractAddr,
 		code,
 		tx.Data,
 		gasRemaining,

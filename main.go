@@ -69,13 +69,15 @@ func main() {
 	// }
 
 	bytecode := []byte{
-		ORIGIN,
+		ADDRESS,
 		BALANCE,
 	}
 
 	contractAccount := NewAccount()
 	contractAccount.Code = bytecode
+	contractAccount.Balance = new(big.Int).SetUint64(2000000000000000000)
 	state.accounts[contractAddr] = contractAccount
+
 	logger.Debug("Created contract account", "address", fmt.Sprintf("0x%x", contractAddr))
 
 	// --- Block Context and EVM Setup ---

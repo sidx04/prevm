@@ -7,6 +7,8 @@ import (
 
 // ExecutionContext holds the state for the current execution scope.
 type ExecutionContext struct {
+	// True if this is a STATICCALL context
+	IsStatic bool
 	// Address is the The address of the contract whose code is currently running.
 	// This value changes with every CALL or DELEGATECALL.
 	Address [20]byte
@@ -84,8 +86,9 @@ type TransactionContext struct {
 }
 
 // NewExecutionContext creates a new execution context.
-func NewExecutionContext(bytecode []byte, calldata []byte, gas uint64) *ExecutionContext {
+func NewExecutionContext(address [20]byte, bytecode []byte, calldata []byte, gas uint64) *ExecutionContext {
 	return &ExecutionContext{
+		Address:  address,
 		Bytecode: bytecode,
 		Stack:    machine.NewStack(1024),
 		Memory:   machine.NewMemory(),
@@ -93,6 +96,7 @@ func NewExecutionContext(bytecode []byte, calldata []byte, gas uint64) *Executio
 		Gas:      gas,
 		CallData: calldata,
 		Stopped:  false,
+		IsStatic: false,
 	}
 }
 
