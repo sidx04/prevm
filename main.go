@@ -94,7 +94,6 @@ func main() {
 		PUSH1, 0,
 		MSTORE,
 
-		// Call the opcode
 		PUSH1, 4,
 		PUSH1, 0,
 		KECCAK256,
@@ -149,6 +148,22 @@ func main() {
 		POP,
 		CODESIZE,
 	}
+	// bytecode = []byte{
+	// 	PUSH1, 2,
+	// 	PUSH1, 0,
+	// 	PUSH1, 0,
+	// 	PUSH1, 0,
+	// 	PUSH1, 0,
+	// 	PUSH1, 0,
+	// 	PUSH1, 0,
+	// 	PUSH1, 0,
+	// 	PUSH1, 0,
+	// 	PUSH1, 0,
+	// 	PUSH1, 1,
+	// 	SWAP10,
+	// 	CODESIZE,
+	// }
+
 	contractAccount.Code = bytecode
 
 	logger.Info("--- Processing Tx 2: Account B calls contract ---")

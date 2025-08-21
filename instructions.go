@@ -92,9 +92,9 @@ func init() {
 	}
 
 	// --- 0x90: Swap Operations (Unified) ---
-	// for i := 0x90; i <= 0x9F; i++ {
-	// 	InstructionSet[i] = &Swap{}
-	// }
+	for i := 0x90; i <= 0x9F; i++ {
+		InstructionSet[i] = &Swap{}
+	}
 
 	// --- 0xa0: Logging Operations (Unified) ---
 	// for i := 0xa0; i <= 0xa4; i++ {

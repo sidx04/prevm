@@ -535,6 +535,9 @@ func (o *Push) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *
 	return nil
 }
 
+// ===============================
+// --- DUPLICATION OPERATIONS ---
+// ===============================
 type Dup struct{}
 
 func (o *Dup) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
@@ -546,6 +549,24 @@ func (o *Dup) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *T
 
 	// Call the stack's Dup method.
 	ec.Stack.Dup(depth)
+
+	return nil
+}
+
+// =============================
+// --- SWAPPING OPERATIONS ---
+// =============================
+// Swap handles all SWAP opcodes from SWAP1 (0x90) to SWAP16 (0x9f).
+type Swap struct{}
+
+func (o *Swap) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	opValue := ec.Bytecode[ec.PC-1]
+
+	depth := int(opValue - SWAP1 + 1)
+
+	ec.Stack.Swap(depth)
+
+	logger.Debug(fmt.Sprintf("SWAP%d", depth), ec.Stack.Display())
 
 	return nil
 }

@@ -88,3 +88,17 @@ func (s *Stack) Dup(n int) {
 
 	logger.Debug(s.Display())
 }
+
+func (s *Stack) Swap(n int) {
+	// The stack needs at least n+1 items to perform a swap.
+	if len(s.data) < n+1 {
+		logger.Fatal("stack underflow on SWAP operation")
+	}
+
+	// Calculate the indices of the two items to swap.
+	topIndex := len(s.data) - 1
+	nthIndex := len(s.data) - 1 - n
+
+	// Perform the swap.
+	s.data[topIndex], s.data[nthIndex] = s.data[nthIndex], s.data[topIndex]
+}
