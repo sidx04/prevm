@@ -221,7 +221,16 @@ func (o *Exp) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *T
 type Keccak struct{}
 
 func (o *Keccak) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
-	// bytes := ec.Memory.Get(0, 4)
+	offset := ec.Stack.Pop().Uint64()
+	size := ec.Stack.Pop().Uint64()
+
+	data := ec.Memory.Get(offset, size)
+	hash := config.Hash(data)
+
+	ec.Stack.Push(new(big.Int).SetBytes(hash))
+
+	logger.Debug("KECCAK", "data", fmt.Sprintf("0x%x", data), "hash", fmt.Sprintf("0x%x", hash))
+
 	return nil
 }
 
@@ -378,6 +387,86 @@ func (o *CodeCopy) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, 
 	return nil
 }
 
+// GasPrice (0x3A)
+type GasPrice struct{}
+
+func (o *GasPrice) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	gas := tx.GasPrice
+
+	ec.Stack.Push(gas)
+
+	return nil
+}
+
+// =========================
+// --- BLOCK OPERATIONS ---
+// =========================
+// BlockHash (0x40)
+type BlockHash struct{}
+
+func (o *BlockHash) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	panic("unimplemented")
+
+	return nil
+}
+
+// CoinBase (0x41)
+type CoinBase struct{}
+
+func (o *CoinBase) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	cb := block.Coinbase
+
+	ec.Stack.Push(new(big.Int).SetBytes(cb[:]))
+
+	return nil
+}
+
+// TimeStamp (0x42)
+type TimeStamp struct{}
+
+func (o *TimeStamp) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	time := block.Timestamp
+
+	ec.Stack.Push(time)
+
+	logger.Debug("TIMESTAMP", "unix", time)
+
+	return nil
+}
+
+// Number (0x43)
+type BlockNumber struct{}
+
+func (o *BlockNumber) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	blockNumber := block.Number
+
+	ec.Stack.Push(blockNumber)
+
+	return nil
+}
+
+// PrevRandao (0x43)
+type PrevRandao struct{}
+
+func (o *PrevRandao) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	randao := block.Difficulty // PrevRANDAO after the Merge
+
+	ec.Stack.Push(randao)
+
+	return nil
+}
+
+// ChainID (0x43)
+type ChainId struct{}
+
+func (o *ChainId) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	chainId := block.ChainID
+
+	ec.Stack.Push(chainId)
+
+	return nil
+}
+
 // GasLimit (0x45)
 type GasLimit struct{}
 
@@ -500,7 +589,7 @@ const (
 	SAR    = 0x1d
 
 	// --- 0x20: Cryptographic ---
-	SHA3 = 0x20
+	KECCAK256 = 0x20
 
 	// --- 0x30: Environmental Information ---
 	ADDRESS        = 0x30

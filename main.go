@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"prevm/config"
+	"time"
 )
 
 func main() {
@@ -76,15 +77,28 @@ func main() {
 	// 	CALLDATALOAD,
 	// }
 
+	// bytecode := []byte{
+	// 	PUSH1, 32,
+	// 	PUSH1, 0,
+	// 	PUSH1, 0,
+	// 	CALLDATACOPY,
+	// 	PUSH1, 8,
+	// 	PUSH1, 31,
+	// 	PUSH1, 0,
+	// 	CALLDATACOPY,
+	// }
+
 	bytecode := []byte{
-		PUSH1, 32,
+		PUSH32,
+		0xFF, 0xFF, 0xFF, 0xFF, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00,
 		PUSH1, 0,
+		MSTORE,
+
+		// Call the opcode
+		PUSH1, 4,
 		PUSH1, 0,
-		CALLDATACOPY,
-		PUSH1, 8,
-		PUSH1, 31,
-		PUSH1, 0,
-		CALLDATACOPY,
+		KECCAK256,
+		TIMESTAMP,
 	}
 
 	contractAccount := NewAccount()
@@ -95,7 +109,12 @@ func main() {
 	logger.Debug("Created contract account", "address", fmt.Sprintf("0x%x", contractAddr))
 
 	// --- Block Context and EVM Setup ---
-	blockCtx := &BlockContext{Number: big.NewInt(1)}
+	blockCtx := &BlockContext{
+		BaseFee:   big.NewInt(70000000000),
+		Number:    big.NewInt(1),
+		Timestamp: big.NewInt(time.Now().Local().Unix()),
+		ChainID:   big.NewInt(1),
+	}
 	evm := NewEVM(state, blockCtx)
 	logger.Info("EVM Initialized and all accounts are set up.")
 
