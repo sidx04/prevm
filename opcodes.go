@@ -617,6 +617,26 @@ func (o *Swap) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *
 // Call implements the CALL opcode (0xf1).
 type Call struct{}
 
+// Return (0xf3)
+type Return struct{}
+
+func (o *Return) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	offset := ec.Stack.Pop().Uint64()
+	size := ec.Stack.Pop().Uint64()
+
+	bytes := ec.Memory.Get(offset, size)
+
+	ec.ReturnData = bytes
+
+	logger.Debug("RETURN", "return_data", bytes)
+
+	// ec.Stack.Clear()
+	// ec.Memory.Clear()
+
+	return nil
+
+}
+
 // EVM Opcodes as constants
 const (
 	// --- 0x00: Stop and Arithmetic Operations ---
