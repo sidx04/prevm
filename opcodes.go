@@ -445,7 +445,7 @@ func (o *BlockNumber) Execute(evm *EVM, ec *ExecutionContext, block *BlockContex
 	return nil
 }
 
-// PrevRandao (0x43)
+// PrevRandao (0x44)
 type PrevRandao struct{}
 
 func (o *PrevRandao) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
@@ -456,7 +456,15 @@ func (o *PrevRandao) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext
 	return nil
 }
 
-// ChainID (0x43)
+// GasLimit (0x45)
+type GasLimit struct{}
+
+func (o *GasLimit) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	ec.ReturnData = block.GasLimit.Bytes()
+	return nil
+}
+
+// ChainID (0x46)
 type ChainId struct{}
 
 func (o *ChainId) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
@@ -464,14 +472,6 @@ func (o *ChainId) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, t
 
 	ec.Stack.Push(chainId)
 
-	return nil
-}
-
-// GasLimit (0x45)
-type GasLimit struct{}
-
-func (o *GasLimit) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
-	ec.ReturnData = block.GasLimit.Bytes()
 	return nil
 }
 
