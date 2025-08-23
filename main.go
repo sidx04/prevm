@@ -98,6 +98,9 @@ func main() {
 		PUSH1, 0,
 		KECCAK256,
 		TIMESTAMP,
+
+		ADDRESS,
+		CALLER,
 	}
 
 	contractAccount := NewAccount()

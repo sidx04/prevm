@@ -60,9 +60,10 @@ type Transaction struct {
 	Nonce    uint64
 	GasLimit uint64
 	GasPrice *big.Int
-	To       *[20]byte
-	Value    *big.Int
-	Data     []byte
+	// From     *[20]byte // read from ethereum docs and change
+	To    *[20]byte
+	Value *big.Int
+	Data  []byte
 	// ... V, R, S for signature later
 }
 

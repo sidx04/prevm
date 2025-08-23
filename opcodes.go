@@ -475,16 +475,54 @@ func (o *ChainId) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, t
 	return nil
 }
 
+// SelfBalance (0x47)
+type SelfBalance struct{}
+
+func (o *SelfBalance) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	addr := ec.Address
+	account := evm.State.GetAccount(addr)
+	bal := account.Balance
+
+	ec.Stack.Push(bal)
+
+	logger.Debug("SELFBALANCE", "address", addr, "balance", bal)
+
+	return nil
+}
+
+// BaseFee (0x48)
+type BaseFee struct{}
+
+func (o *BaseFee) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	baseFee := block.BaseFee
+
+	ec.Stack.Push(baseFee)
+
+	logger.Debug("BASEFEE", "fee", baseFee)
+
+	return nil
+}
+
+// BlobHash (0x49)
+type BlobHash struct{}
+
+func (o *BlobHash) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
+	panic("unimplemented")
+	return nil
+}
+
 // =================================================
 // --- STACK MEMORY STORAGE AND FLOW OPERATIONS ---
 // =================================================
 type Pop struct{}
 
+// Pop (0x50)
 func (o *Pop) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
 	ec.Stack.Pop()
 	return nil
 }
 
+// MLoad (0x51)
 type Mload struct{}
 
 func (o *Mload) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
@@ -498,6 +536,7 @@ func (o *Mload) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx 
 	return nil
 }
 
+// MStore (0x52)
 type Mstore struct{}
 
 func (o *Mstore) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
@@ -511,6 +550,7 @@ func (o *Mstore) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx
 	return nil
 }
 
+// PC (x058)
 type Pc struct{}
 
 func (o *Pc) Execute(evm *EVM, ec *ExecutionContext, block *BlockContext, tx *TransactionContext) error {
